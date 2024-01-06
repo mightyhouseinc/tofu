@@ -6,7 +6,7 @@ import time
 def __main__(drive_name,drive_format):
 	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
 		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
+	elif drive_name is None:
 		print("[-] This module needs a drive to work; use 'usedrive'")
 	else:
 		if not os.path.exists("tofu_tmp/windows_filesystem"):
@@ -40,16 +40,16 @@ def __main__(drive_name,drive_format):
 			print(hashdump)
 			with open("tofu_loot/pypykatz_hashdump.txt",'a') as f:
 				f.write(str(hashdump))
-				 
-			
+
+
 			time.sleep(2)
 			try:
 				subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
 				print("[+] Successfully unmounted")
 			except Exception as unmount_error:
 				print(f"Error Unmounting : {unmount_error}")
-			
-		
+
+
 			try:
 				os.remove("tofu_tmp/HASHDUMP_SYSTEM")
 				os.remove("tofu_tmp/HASHDUMP_SAM")

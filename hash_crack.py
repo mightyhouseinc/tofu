@@ -89,11 +89,9 @@ with open(hashes_file,'r') as hash_file_handler:
                 if wordlist.lower() == "bruteforce":
                     print("[#] Running 10 Characters Of Incremental ASCII")
                     plaintext = bruteforce(user_hash)
-                    print(f"[!!!] {username}:{plaintext}")
                 else:
                     plaintext = do_wordlist(user_hash,wordlist)
-                    print(f"[!!!] {username}:{plaintext}")
-                    
+                print(f"[!!!] {username}:{plaintext}")
             else:
                 print(f"[-] Invalid Hash Length : {len(user_hash)}; Skipping")
             

@@ -7,10 +7,10 @@ class tofu:
 	drive_path = None
 	drive_format = None
 	module_list = []
-	def check_valid_ms(path):
+	def check_valid_ms(self):
 		filesystem_data = {}
 		try:
-			with open(path,'rb') as fileHandler:
+			with open(self, 'rb') as fileHandler:
 				try:
 					header = fileHandler.read(11)[3:11]
 					if header.startswith(b"NTFS"):
@@ -50,9 +50,7 @@ class tofu:
 	def print_all_ms_drives():
 		print("[#] Listing all devices using a Microsoft file system\n")
 		filedata = tofu.list_all_ms_drives()
-		drive_counter = 0
-		for file_system in filedata:
-			drive_counter += 1
+		for drive_counter, file_system in enumerate(filedata, start=1):
 			tofu.drive_option_data[str(drive_counter)] = file_system
 			print(f"Drive : {drive_counter} \n Drive Location : {file_system} \n Drive Format : {filedata[file_system]} \n ======================================")
 
@@ -76,20 +74,16 @@ class tofu:
 		[use] - Use module
 		''')
 	def list_modules():
-		modules = glob.glob("./modules/*.py")
-		return modules
-	def check_valid_module(module):
-		if module in tofu.module_list or module+".py" in tofu.module_list:
-			return True
-		else:
-			return False
-	def load_module(module_name):
-		module_name = module_name.replace(".py","")
-		print(f"[...] Loading {module_name}")
-		current_module = importlib.import_module("modules."+module_name)
+		return glob.glob("./modules/*.py")
+	def check_valid_module(self):
+		return self in tofu.module_list or f"{self}.py" in tofu.module_list
+	def load_module(self):
+		self = self.replace(".py", "")
+		print(f"[...] Loading {self}")
+		current_module = importlib.import_module(f"modules.{self}")
 		try:
 			current_module.__main__(tofu.drive_path,tofu.drive_format)
-				
+
 		except Exception as module_error:
 			print(f"Module Failed : {module_error}")
 	def __main__():
@@ -107,38 +101,29 @@ class tofu:
 			elif option.startswith("usedrive ") or option == "usedrive":
 				if option == "usedrive":
 					drive_to_use = input("[full path to drive/alias from 'list'] >>")
-					
+
 				else:
 					drive_to_use = option[9:]
 				drive_to_use = drive_to_use.strip()
-				
+
 				check_for_file = True
-				
+
 				try:
 					drive_to_use = tofu.drive_option_data[drive_to_use]
 					check_for_file = False
 				except:
 					pass
-					
-				if check_for_file:
-					drive_type = tofu.check_valid_ms(drive_to_use)	
-					if drive_type:
-							print("[+] Valid MS Drive")
-							print(f"[+] Drive Format : {drive_type}")
-							tofu.drive_path = drive_to_use
-							tofu.drive_format = drive_type
-					else:
-							print("[-] Invalid MS Drive")
+
+				if drive_type := tofu.check_valid_ms(drive_to_use):
+					print("[+] Valid MS Drive")
+					print(f"[+] Drive Format : {drive_type}")
+					tofu.drive_path = drive_to_use
+					tofu.drive_format = drive_type
+				elif check_for_file:
+					print("[-] Invalid MS Drive")
 				else:
-					drive_type = tofu.check_valid_ms(drive_to_use)
-					if drive_type:
-						print("[+] Valid MS Drive")
-						print(f"[+] Drive Format : {drive_type}")
-						tofu.drive_path = drive_to_use
-						tofu.drive_format = drive_type
-					else:
-						print("[?] Something went wrong with getting the drive format; try re-listing the drives")
-			
+					print("[?] Something went wrong with getting the drive format; try re-listing the drives")
+
 			elif option == "modules":
 				print("==============================================================\n")
 				module_list = tofu.list_modules()
@@ -150,21 +135,16 @@ class tofu:
 				tofu.module_list = clean_module_list
 				print("\n==============================================================")
 			elif option == "use" or option.startswith("use "):
-				if option == "use":
-					module_to_use = input("[module to use] >> ")
-				else:
-					module_to_use = option[4:]
+				module_to_use = input("[module to use] >> ") if option == "use" else option[4:]
 				module_to_use = module_to_use.strip()
 				if tofu.check_valid_module(module_to_use):
 					print("[+] Valid module")
 					tofu.load_module(module_to_use)
 				else:
 					print("[-] Invalid module name, try running 'modules' again")
-				
-				
-			elif option == "":
-				pass
-			else:
+
+
+			elif option != "":
 				print("[-] Invalid option")
 				tofu.help()
 						

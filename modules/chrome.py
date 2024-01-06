@@ -7,7 +7,7 @@ import tofu_lib.dpapi
 def __main__(drive_name,drive_format):
 	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
 		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
+	elif drive_name is None:
 		print("[-] This module needs a drive to work; use 'usedrive'")
 	else:
 		if not os.path.exists("tofu_tmp/windows_filesystem"):
@@ -22,7 +22,7 @@ def __main__(drive_name,drive_format):
 			open("tofu_loot/chrome_history.txt","x").close()
 		except FileExistsError:
 			pass
-		
+
 		subprocess.check_call(["mount",drive_name,"tofu_tmp/windows_filesystem"])
 		print("[+] Drive mounted to 'tofu_tmp/windows_filesystem'")
 		try:
@@ -41,7 +41,7 @@ def __main__(drive_name,drive_format):
 						for url in cursor.fetchall():
 							history_file.write(f"{url[0]}\n")
 							print(f"[###] URL : {url[0]}")
-							
+
 						conn.close()
 					except Exception as sqlite_error:
 						print(f"[-] Unknown error : {sqlite_error}")
@@ -73,7 +73,7 @@ def __main__(drive_name,drive_format):
 							print("[+] We have masterkeys!")
 							for masterkey in masterkeys.masterkeys:
 								print(f"-- MASTERKEY / {masterkey}")
-								
+
 							paths = masterkeys.find_chrome_database_file_offline("tofu_tmp/windows_filesystem/Users/")
 							passwords = masterkeys.decrypt_all_chrome(paths)
 							for i in passwords:
@@ -83,16 +83,16 @@ def __main__(drive_name,drive_format):
 								print("\n")
 						else:
 							print("[-] We don't have any masterkeys; This could be because all the users on the machine are domain users")
-						
-							
+
+
 					except Exception as sqlite_error:
 						print(f"[-] Unknown error : {sqlite_error}")
 						conn.close()
 				except sqlite3.OperationalError as sqlite3_error:
 					print(f"[---] {sqlite3_error}")
-				
-					
-					
+
+
+
 		except Exception as open_error:
 			print(f"[-] Error {open_error}")
 		os.remove("tofu_tmp/HASHDUMP_SYSTEM")
