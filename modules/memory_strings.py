@@ -22,7 +22,7 @@ def search_for(search,file):
 def __main__(drive_name,drive_format):
 	if drive_format == "BITLOCKER ENCRYPTED DRIVE":
 		print("[-] This module does not work with a Bitlocker drive")
-	elif drive_name == None:
+	elif drive_name is None:
 		print("[-] This module needs a drive to work; use 'usedrive'")
 	else:
 		if not os.path.exists("tofu_tmp/windows_filesystem"):
@@ -37,11 +37,11 @@ def __main__(drive_name,drive_format):
 		try:
 			to_search = ""
 			filetosearch = ""
-			while to_search == "":
+			while not to_search:
 				to_search = input("[#] What do you want to search for? : ")
-			while filetosearch != "hiberfil" and filetosearch != "pagefile":
+			while filetosearch not in ["hiberfil", "pagefile"]:
 				filetosearch = input("[#] 'hiberfil' or 'pagefile' search [hiberfil/pagefile]? : ")
-				if filetosearch != "hiberfil" and filetosearch != "pagefile":
+				if filetosearch not in ["hiberfil", "pagefile"]:
 					print("[-] Invalid Option; the options are 'hiberfil' and 'pagefile'")
 				elif filetosearch == "hiberfil":
 					filetosearch = "hiberfil.sys"
@@ -52,5 +52,5 @@ def __main__(drive_name,drive_format):
 			search_for(to_search,f"tofu_tmp/windows_filesystem/{filetosearch}")
 		except Exception as open_error:
 			print(f"[-] Error {open_error}")
-		time.sleep(2)	
+		time.sleep(2)
 		subprocess.check_call(["umount","tofu_tmp/windows_filesystem"])
